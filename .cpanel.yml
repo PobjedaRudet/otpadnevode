@@ -1,0 +1,8 @@
+##### THIS ALLOWS US TO DEPLOY THE SITE FROM A GIT REPO ######
+#/home/pobjeda/repositories/rudet_norme
+#https://pobjeda.com:2083/cpsess9724415117/frontend/jupiter/filemanager/index.html?dir=%2Fhome%2Fpobjeda%2Fpublic_html%2Fnorme.pobjeda.com
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/pobjeda/public_html/otpadnevode
+    - /bin/cp -R * $DEPLOYPATH
