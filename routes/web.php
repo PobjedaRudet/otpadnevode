@@ -37,6 +37,7 @@ Route::middleware(['auth', 'isadmin'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index')->middleware('haspermission:reports');
     Route::get('/reports/summary', [ReportController::class, 'summary'])->name('reports.summary')->middleware('haspermission:summary');
     Route::get('/reports/instrument-summary', [ReportController::class, 'instrumentSummary'])->name('reports.instrumentSummary')->middleware('haspermission:instrumentSummary');
+    Route::get('/reports/period', [ReportController::class, 'period'])->name('reports.period')->middleware('haspermission:reports');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/records-lazy', [RecordController::class, 'lazy'])->name('records.lazy');
 });

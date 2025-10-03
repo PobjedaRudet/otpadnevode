@@ -355,4 +355,140 @@ class ReportController extends Controller
             'cumulativeValues'
         ));
     }
+
+    public function period(Request $request)
+    {
+        $companies = Company::orderBy('name')->get();
+        $selectedCompany = null;
+        $records = collect();
+        $perPage = (int) $request->get('per_page', 50);
+        $allowedPerPage = [25,50,100,200];
+        if(!in_array($perPage, $allowedPerPage, true)) { $perPage = 50; }
+
+        $companyId = $request->get('company_id');
+        $dateFrom = $request->get('date_from');
+        $timeFrom = $request->get('time_from');
+        $dateTo = $request->get('date_to');
+        $timeTo = $request->get('time_to');
+
+        // Normalizacija vremena: prihvati HH:MM ili HH:MM:SS i pretvori u HH:MM:SS
+        $normalizeTime = function($time) {
+            if(!$time) return null;
+            $orig = $time;
+            $time = trim($time);
+            // 1) HH:MM -> dodaj :00
+            if(preg_match('/^(\d{2}):(\d{2})$/', $time, $m)) {
+                [$full,$h,$i] = $m;
+                if((int)$h < 24 && (int)$i < 60) return sprintf('%02d:%02d:00', $h, $i);
+            }
+            // 2) HH:MM:SS
+            if(preg_match('/^(\d{2}):(\d{2}):(\d{2})$/', $time, $m)) {
+                [$full,$h,$i,$s] = $m;
+                if((int)$h < 24 && (int)$i < 60 && (int)$s < 60) return $time;
+            }
+            // 3) 12h format: H:MM AM/PM ili HH:MM AM/PM
+            if(preg_match('/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i', strtoupper($time), $m)) {
+                $h = (int)$m[1]; $i = (int)$m[2]; $ampm = strtoupper($m[3]);
+                if($h >=1 && $h <=12 && $i < 60) {
+                    if($ampm === 'AM') {
+                        if($h == 12) $h = 0; // 12 AM -> 00
+                    } else { // PM
+                        if($h != 12) $h += 12; // 1 PM -> 13, 12 PM stays 12
+                    }
+                    return sprintf('%02d:%02d:00', $h, $i);
+                }
+            }
+            return null; // nevalidno / ignorisano
+        };
+        $rawTimeFrom = $timeFrom; // čuvamo original za view ako treba
+        $rawTimeTo = $timeTo;
+    $normalizedTimeFrom = $normalizeTime($timeFrom);
+    $normalizedTimeTo = $normalizeTime($timeTo);
+
+        $hasFilter = $companyId && $dateFrom && $dateTo; // vrijeme je opcionalno
+        $paginator = null;
+
+        if ($companyId) {
+            $selectedCompany = Company::find($companyId);
+        }
+
+        $driver = DB::getDriverName();
+        $instrumentCount = 0;
+        $appliedTimeFilter = false;
+        $timeFilterMode = null; // between | from | to | none
+
+        if ($selectedCompany && $hasFilter) {
+            // Normalizacija datuma i vremena
+            try {
+                $fromDate = \Carbon\Carbon::parse($dateFrom)->format('Y-m-d');
+                $toDate = \Carbon\Carbon::parse($dateTo)->format('Y-m-d');
+            } catch(\Exception $e) {
+                $fromDate = $toDate = null;
+            }
+
+            if ($fromDate && $toDate) {
+                $instrumentIds = $selectedCompany->instruments()->pluck('id');
+                $instrumentCount = $instrumentIds->count();
+                if ($instrumentIds->count()) {
+                    $query = Record::with(['instrument:id,name'])
+                        ->whereIn('instrument_id', $instrumentIds)
+                        ->whereBetween('datum', [$fromDate, $toDate]);
+
+                    // Vrijeme filtriranje (ako oba unijeta)
+                    if ($normalizedTimeFrom && $normalizedTimeTo) {
+                        if ($normalizedTimeFrom > $normalizedTimeTo) {
+                            [$normalizedTimeFrom, $normalizedTimeTo] = [$normalizedTimeTo, $normalizedTimeFrom];
+                        }
+                        if ($driver === 'sqlite') {
+                            $query->whereBetween('vrijeme', [$normalizedTimeFrom, $normalizedTimeTo]);
+                        } else {
+                            $query->whereRaw('TIME(vrijeme) BETWEEN ? AND ?', [$normalizedTimeFrom, $normalizedTimeTo]);
+                        }
+                        $appliedTimeFilter = true; $timeFilterMode = 'between';
+                    } elseif ($normalizedTimeFrom) {
+                        if ($driver === 'sqlite') {
+                            $query->where('vrijeme', '>=', $normalizedTimeFrom);
+                        } else {
+                            $query->whereRaw('TIME(vrijeme) >= ?', [$normalizedTimeFrom]);
+                        }
+                        $appliedTimeFilter = true; $timeFilterMode = 'from';
+                    } elseif ($normalizedTimeTo) {
+                        if ($driver === 'sqlite') {
+                            $query->where('vrijeme', '<=', $normalizedTimeTo);
+                        } else {
+                            $query->whereRaw('TIME(vrijeme) <= ?', [$normalizedTimeTo]);
+                        }
+                        $appliedTimeFilter = true; $timeFilterMode = 'to';
+                    } else {
+                        $timeFilterMode = 'none';
+                    }
+
+                    // Sortiranje rastuće po datumu i vremenu
+                    $query->orderBy('datum')->orderBy('vrijeme');
+
+                    $paginator = $query->paginate($perPage)->appends($request->query());
+                }
+            }
+        }
+
+        return view('reports.period', [
+            'companies' => $companies,
+            'selectedCompany' => $selectedCompany,
+            'paginator' => $paginator,
+            'companyId' => $companyId,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'timeFrom' => $rawTimeFrom,
+            'timeTo' => $rawTimeTo,
+            'normalizedTimeFrom' => $normalizedTimeFrom,
+            'normalizedTimeTo' => $normalizedTimeTo,
+            'perPage' => $perPage,
+            'allowedPerPage' => $allowedPerPage,
+            'hasFilter' => $hasFilter,
+            'instrumentCount' => $instrumentCount,
+            'appliedTimeFilter' => $appliedTimeFilter,
+            'timeFilterMode' => $timeFilterMode,
+            'driver' => $driver
+        ]);
+    }
 }

@@ -60,6 +60,24 @@
         </a>
         @endif
 
+        @if($user && $user->hasPermission('reports'))
+        <!-- Kartica: Period izvještaj -->
+        <a href="{{ route('reports.period') }}" class="group h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 border-amber-200 dark:border-amber-700 p-5 hover:shadow-lg hover:border-amber-400 dark:hover:border-amber-500 transition relative">
+            <div>
+                <div class="flex items-start justify-between">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 tracking-wide">PERIOD</h3>
+                    <span class="text-xs px-2 py-1 rounded-md bg-amber-50 text-amber-700 group-hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300">⇄</span>
+                </div>
+                <p class="mt-3 text-xs leading-relaxed text-gray-600 dark:text-gray-400">Vrijednosti po odabranom datumsko-vremenskom rasponu.</p>
+            </div>
+            <div class="mt-auto pt-4 text-amber-600 group-hover:text-amber-700 dark:text-amber-400 dark:group-hover:text-amber-300 text-sm font-medium flex items-center gap-1">
+                Otvori
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </div>
+            <div class="absolute inset-0 rounded-xl pointer-events-none opacity-0 group-hover:opacity-10 bg-gradient-to-br from-amber-400 to-amber-600 transition"></div>
+        </a>
+        @endif
+
         @if($user && $user->hasPermission('summary'))
         <!-- Kartica: Sumarni -->
         <a href="{{ route('reports.summary') }}" class="group h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border-2 border-fuchsia-200 dark:border-fuchsia-700 p-5 hover:shadow-lg hover:border-fuchsia-400 dark:hover:border-fuchsia-500 transition relative">

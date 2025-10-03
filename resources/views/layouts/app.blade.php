@@ -6,10 +6,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'Otpadne Vode') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
         .sidebar-collapsed .sidebar-label { display: none; }
         .sidebar-collapsed .sidebar-wrapper { width: 4rem; }
         .sidebar-transition { transition: width .25s ease; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
