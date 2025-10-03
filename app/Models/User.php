@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'permissions',
     ];
 
     /**
@@ -43,6 +45,20 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'permissions' => 'array',
         ];
+    }
+
+    /**
+     * Provjera da li korisnik ima određenu dozvolu.
+     * Admin (rola 'admin') uvijek ima sve.
+     */
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->role === 'admin') {
+            return true;
+        }
+        $perms = $this->permissions ?? [];
+        return is_array($perms) && in_array($permission, $perms);
     }
 }

@@ -12,7 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Registracija aliasa za prilagođene middleware (novi Laravel stil bez Kernel klase)
+        $middleware->alias([
+            'haspermission' => \App\Http\Middleware\HasPermission::class,
+            'isadmin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

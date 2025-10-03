@@ -558,9 +558,20 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
     );
 
     public static $classMap = array (
+        'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
         'App\\Http\\Controllers\\Auth\\AuthenticatedSessionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/AuthenticatedSessionController.php',
         'App\\Http\\Controllers\\Auth\\RegisteredUserController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/RegisteredUserController.php',
+        'App\\Http\\Controllers\\CompaniesController' => __DIR__ . '/../..' . '/app/Http/Controllers/CompaniesController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
+        'App\\Http\\Controllers\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/DashboardController.php',
+        'App\\Http\\Controllers\\InstrumentsController' => __DIR__ . '/../..' . '/app/Http/Controllers/InstrumentsController.php',
+        'App\\Http\\Controllers\\RecordController' => __DIR__ . '/../..' . '/app/Http/Controllers/RecordController.php',
+        'App\\Http\\Controllers\\ReportController' => __DIR__ . '/../..' . '/app/Http/Controllers/ReportController.php',
+        'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
+        'App\\Http\\Middleware\\HasPermission' => __DIR__ . '/../..' . '/app/Http/Middleware/HasPermission.php',
+        'App\\Http\\Middleware\\IsAdmin' => __DIR__ . '/../..' . '/app/Http/Middleware/IsAdmin.php',
+        'App\\Models\\Company' => __DIR__ . '/../..' . '/app/Models/Company.php',
+        'App\\Models\\Instrument' => __DIR__ . '/../..' . '/app/Models/Instrument.php',
         'App\\Models\\Record' => __DIR__ . '/../..' . '/app/Models/Record.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',

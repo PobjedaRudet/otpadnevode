@@ -6,9 +6,20 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Http\\Controllers\\AdminController' => $baseDir . '/app/Http/Controllers/AdminController.php',
     'App\\Http\\Controllers\\Auth\\AuthenticatedSessionController' => $baseDir . '/app/Http/Controllers/Auth/AuthenticatedSessionController.php',
     'App\\Http\\Controllers\\Auth\\RegisteredUserController' => $baseDir . '/app/Http/Controllers/Auth/RegisteredUserController.php',
+    'App\\Http\\Controllers\\CompaniesController' => $baseDir . '/app/Http/Controllers/CompaniesController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
+    'App\\Http\\Controllers\\DashboardController' => $baseDir . '/app/Http/Controllers/DashboardController.php',
+    'App\\Http\\Controllers\\InstrumentsController' => $baseDir . '/app/Http/Controllers/InstrumentsController.php',
+    'App\\Http\\Controllers\\RecordController' => $baseDir . '/app/Http/Controllers/RecordController.php',
+    'App\\Http\\Controllers\\ReportController' => $baseDir . '/app/Http/Controllers/ReportController.php',
+    'App\\Http\\Kernel' => $baseDir . '/app/Http/Kernel.php',
+    'App\\Http\\Middleware\\HasPermission' => $baseDir . '/app/Http/Middleware/HasPermission.php',
+    'App\\Http\\Middleware\\IsAdmin' => $baseDir . '/app/Http/Middleware/IsAdmin.php',
+    'App\\Models\\Company' => $baseDir . '/app/Models/Company.php',
+    'App\\Models\\Instrument' => $baseDir . '/app/Models/Instrument.php',
     'App\\Models\\Record' => $baseDir . '/app/Models/Record.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',

@@ -5,7 +5,15 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 bg-white border-b border-gray-200">
-                <h1 class="text-2xl font-semibold text-gray-900 mb-6">Izvještaji o otpadnim vodama</h1>
+                <div class="flex items-center justify-between mb-6">
+                    <h1 class="text-2xl font-semibold text-gray-900">Izvještaji o otpadnim vodama</h1>
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-teal-600 hover:text-teal-700 group">
+                        <svg class="h-4 w-4 text-teal-600 group-hover:text-teal-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span class="ml-1">Nazad na dashboard</span>
+                    </a>
+                </div>
 
                 <!-- Filter Form -->
                 <form method="GET" action="{{ route('reports.index') }}" id="reportForm" class="flex flex-wrap items-end gap-4 mb-8">
@@ -16,7 +24,7 @@
                             Izaberite firmu:
                         </label>
                         <select name="company_id" id="company_id" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none
-                       focus:ring-teal-500 focus:border-teal-500" onchange="this.form.submit()">
+                       focus:ring-teal-500 focus:border-teal-500" onchange="onCompanyChange(this)">
                             <option value="">-- Izaberite firmu --</option>
                             @foreach($companies as $company)
                             <option value="{{ $company->id }}" @if($selectedCompany && $selectedCompany->id == $company->id) selected @endif>
@@ -261,76 +269,144 @@
 @if($selectedInstrument && !empty($chartLabels))
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const rawLabels = @json($chartLabels);
+        // Pretvorimo "dd.mm.YYYY HH:ii:ss" u multi-line labelu [datum, vrijeme]
+        const multiLineLabels = rawLabels.map(l => {
+            const parts = l.split(' ');
+            if (parts.length >= 2) {
+                return [parts[0], parts[1]]; // datum na prvi red, vrijeme na drugi
+            }
+            return l;
+        });
+
         const ctx = document.getElementById('valuesChart').getContext('2d');
 
+        // Custom plugin za ispis vrijednosti iznad tačaka (ako nije previše tačaka)
+        const pointValuePlugin = {
+            id: 'pointValuePlugin',
+            afterDatasetsDraw(chart, args, opts) {
+                const show = opts?.show;
+                if (!show) return;
+                const { ctx } = chart;
+                const ds = chart.getDatasetMeta(0);
+                const data = chart.data.datasets[0].data;
+                ctx.save();
+                ctx.font = '10px sans-serif';
+                ctx.fillStyle = '#0f766e';
+                ctx.textAlign = 'center';
+                ds.data.forEach((pt, i) => {
+                    const val = data[i];
+                    if (val == null) return;
+                    ctx.fillText(typeof val === 'number' ? val.toFixed(2) : val, pt.x, pt.y - 6);
+                });
+                ctx.restore();
+            }
+        };
+
+        const values = @json($chartValues);
+        const tooManyPoints = multiLineLabels.length > 380; // prag da ne zatrpamo graf
+
         const chart = new Chart(ctx, {
-            type: 'line'
-            , data: {
-                labels: @json($chartLabels)
-                , datasets: [{
-                    label: 'Vrijednost'
-                    , data: @json($chartValues)
-                    , borderColor: 'rgb(20, 184, 166)'
-                    , backgroundColor: 'rgba(20, 184, 166, 0.1)'
-                    , borderWidth: 2
-                    , fill: false
-                    , tension: 0.1
-                    , pointRadius: 4
-                    , pointHoverRadius: 6
+            type: 'line',
+            data: {
+                labels: multiLineLabels,
+                datasets: [{
+                    label: 'Vrijednost',
+                    data: values,
+                    borderColor: 'rgb(20, 184, 166)',
+                    backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.15,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                 }]
             },
-            // Uklonjen custom plugin za iscrtavanje datuma/vremena ispod ose
-            plugins: []
-            , options: {
-                responsive: true
-                , maintainAspectRatio: false
-                , layout: {
-                    padding: {
-                        bottom: 10
-                    }
-                }
-                , plugins: {
+            plugins: [pointValuePlugin],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { bottom: 10 } },
+                plugins: {
                     title: {
-                        display: true
-                        , text: '{{ $selectedInstrument->name ?? "" }} ({{ $selectedCompany->name ?? "" }}) - Period: {{ $periodText }}'
-                    }
-                    , legend: {
-                        display: true
-                        , position: 'top'
-                    }
-                    , tooltip: {
+                        display: true,
+                        text: '{{ $selectedInstrument->name ?? "" }} ({{ $selectedCompany->name ?? "" }}) - Period: {{ $periodText }}'
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
                         callbacks: {
-                            // Po želji se još može ukloniti ili prilagoditi tooltip
-                            title: function(context) {
-                                return context[0].label;
+                            title: (items) => {
+                                // items[0].label je sada array [datum, vrijeme]
+                                const lbl = items[0].label;
+                                if (Array.isArray(lbl)) return lbl.join(' ');
+                                return lbl;
+                            },
+                            label: (ctx) => 'Vrijednost: ' + ctx.parsed.y
+                        }
+                    },
+                    pointValuePlugin: { show: !tooManyPoints }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: 'Vrijednost' },
+                        ticks: { callback: v => v }
+                    },
+                    x: {
+                        display: true,
+                        ticks: {
+                            autoSkip: true,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            // Ako je multi-line, Chart.js sam iscrtava drugi red
+                            callback: function(value, index) {
+                                const lbl = this.getLabelForValue(value);
+                                // Chart.js već rukuje array -> multi-line, ovdje samo fallback
+                                return lbl;
                             }
                         }
                     }
-                }
-                , scales: {
-                    y: {
-                        beginAtZero: false
-                        , title: {
-                            display: true
-                            , text: 'Vrijednost'
-                        }
-                    }
-                    , x: {
-                        display: false // Sakrivamo kompletnu x osu (etikete i liniju)
-                    }
-                }
-                , interaction: {
-                    intersect: false
-                    , mode: 'index'
+                },
+                interaction: { intersect: false, mode: 'index' },
+                elements: {
+                    point: { hitRadius: 8 }
                 }
             }
         });
-    });
 
+        if (tooManyPoints) {
+            console.warn('Previše tačaka za ispis vrijednosti iznad svake (' + multiLineLabels.length + '). Plugin onemogućen.');
+        }
+    });
 </script>
 @endif
 
 <script>
+    // Pri promjeni firme: resetujemo instrument, datume i uklanjamo graf iz trenutnog prikaza (reload bez instrumenta)
+    function onCompanyChange(el) {
+        const form = document.getElementById('reportForm');
+        if (!form) return;
+        const instrumentSelect = document.getElementById('instrument_id');
+        if (instrumentSelect) {
+            instrumentSelect.selectedIndex = 0; // prazna opcija
+        }
+        // (Opcionalno) reset datuma – zakomentarisano; otključi ako želiš da se i datumi brišu:
+        // const df = document.getElementById('date_from'); if (df) df.value = '';
+        // const dt = document.getElementById('date_to'); if (dt) dt.value = '';
+
+        // Ako je graf već prikazan, ukloni njegov sadržaj prije submit-a radi UX (brz vizualni reset)
+        const canvas = document.getElementById('valuesChart');
+        if (canvas && canvas.getContext) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Submit forme bez instrument_id => backend neće generisati graf
+        form.submit();
+    }
+
     function autoSubmitIfReady() {
         const form = document.getElementById('reportForm');
         const companyId = document.getElementById('company_id').value;

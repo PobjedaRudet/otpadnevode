@@ -12,12 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('records', function (Blueprint $table) {
-            $table->id(); // Id
-            $table->string('firma'); // Firma (varchar)
-            $table->string('mjrni_instrument'); // MjerniInstrument (varchar) - stored as snake-case/shortened
-            $table->timestamp('vrijeme'); // Vrijeme (timestamp)
-            $table->date('datum'); // Datum (date)
-            $table->decimal('vrijednost', 10, 2); // Vrijednost (decimal with two decimals)
+            $table->id();
+            $table->foreignId('instrument_id')->constrained('instruments');
+            $table->timestamp('vrijeme');
+            $table->date('datum');
+            $table->decimal('vrijednost', 10, 2);
+            // Optional: you can later add created_at for auditing if needed
+            // Not adding timestamps to keep original behaviour
+            $table->index(['instrument_id','datum']);
         });
     }
 

@@ -12,8 +12,7 @@ class Record extends Model
     public $timestamps = false; // table has no created_at / updated_at
 
     protected $fillable = [
-        'firma',
-        'mjrni_instrument',
+        'instrument_id',
         'vrijeme',
         'datum',
         'vrijednost',
@@ -24,4 +23,9 @@ class Record extends Model
         'datum' => 'date',
         'vrijednost' => 'decimal:2',
     ];
+
+    public function instrument()
+    {
+        return $this->belongsTo(Instrument::class);
+    }
 }
