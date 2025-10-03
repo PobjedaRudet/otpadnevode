@@ -30,8 +30,8 @@
                     ['label' => 'Dashboard', 'route' => 'dashboard', 'permission' => 'dashboard', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
                     ['label' => 'Firme', 'route' => 'companies.index', 'permission' => 'companies', 'icon' => 'M4 6a2 2 0 012-2h2a2 2 0 012 2v12H4V6zm6 0a2 2 0 012-2h2a2 2 0 012 2v12h-6V6zm8 0a2 2 0 012-2h2a2 2 0 012 2v12h-6V6'],
                     ['label' => 'Instrumenti', 'route' => 'instruments.index', 'permission' => 'instruments', 'icon' => 'M11 3a1 1 0 00-1 1v7.586l-1.707 1.707a1 1 0 001.414 1.414L12 13.414l2.293 2.293a1 1 0 001.414-1.414L14 11.586V4a1 1 0 00-1-1h-2z M5 20h14a2 2 0 002-2v-1H3v1a2 2 0 002 2z'],
-                    ['label' => 'Izvještaji', 'route' => 'reports.index', 'permission' => 'reports', 'icon' => 'M9 17v-6h2v6H9zm4 0V7h2v10h-2zM5 17h2v-2H5v2zm8-12V4a1 1 0 00-1-1H6a1 1 0 00-1 1v14h14V7h-2a1 1 0 01-1-1h-3z'],
-                    ['label' => 'Sumanrni', 'route' => 'reports.summary', 'permission' => 'summary', 'icon' => 'M3 3h18v4H3V3zm0 6h18v4H3V9zm0 6h18v4H3v-4z'],
+                    ['label' => 'Detaljni izvještaj', 'route' => 'reports.index', 'permission' => 'reports', 'icon' => 'M9 17v-6h2v6H9zm4 0V7h2v10h-2zM5 17h2v-2H5v2zm8-12V4a1 1 0 00-1-1H6a1 1 0 00-1 1v14h14V7h-2a1 1 0 01-1-1h-3z'],
+                    ['label' => 'Sumarni izvještaj', 'route' => 'reports.summary', 'permission' => 'summary', 'icon' => 'M3 3h18v4H3V3zm0 6h18v4H3V9zm0 6h18v4H3v-4z'],
                     ['label' => 'Izvještaj po instrumentu', 'route' => 'reports.instrumentSummary', 'permission' => 'instrumentSummary', 'icon' => 'M9 17v-6h2v6H9zm4 0V7h2v10h-2zM5 17h2v-2H5v2zm8-12V4a1 1 0 00-1-1H6a1 1 0 00-1 1v14h14V7h-2a1 1 0 01-1-1h-3z'],
                 ];
             @endphp
