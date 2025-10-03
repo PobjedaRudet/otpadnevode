@@ -12,6 +12,7 @@ class IsAdmin
         if (Auth::check() && Auth::user()->role === 'admin') {
             return $next($request);
         }
-        abort(403, 'Nemate administratorska prava.');
+        // Umjesto 403 stranice – tiho preusmjeri na početnu uz poruku
+        return redirect('/')->with('error', 'Nemate administratorska prava.');
     }
 }

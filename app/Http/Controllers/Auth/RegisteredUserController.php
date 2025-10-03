@@ -13,6 +13,10 @@ class RegisteredUserController extends Controller
 {
     public function create()
     {
+        // Ova forma je sada dostupna samo administratoru (ruta je već zaštićena), ali dodatna provjera
+        if (!Auth::check() || Auth::user()->role !== 'admin') {
+            return redirect('/')->with('error', 'Nemate administratorska prava.');
+        }
         return view('auth.register');
     }
 
@@ -24,14 +28,17 @@ class RegisteredUserController extends Controller
             'password' => ['required','confirmed', Rules\Password::defaults()],
         ]);
 
+        // Dodatna zaštita – samo admin može kreirati korisnika
+        if (!Auth::check() || Auth::user()->role !== 'admin') {
+            return redirect('/')->with('error', 'Nemate administratorska prava.');
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
-
-        Auth::login($user);
-
-        return redirect()->route('dashboard');
+        // Ne logujemo novog korisnika – admin ostaje prijavljen
+        return redirect()->route('admin.panel')->with('status', 'Korisnik uspješno kreiran.');
     }
 }

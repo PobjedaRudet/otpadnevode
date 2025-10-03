@@ -102,6 +102,19 @@
         </header>
 
         <main class="flex-1 p-6 lg:p-8">
+            {{-- Flash poruke --}}
+            @if(session('error'))
+                <div class="mb-4 relative rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 shadow" role="alert" data-flash-alert data-alert-type="error">
+                    <span class="font-medium">Greška:</span> {{ session('error') }}
+                    <button type="button" class="absolute top-1.5 right-2 text-red-500 hover:text-red-700" data-alert-close aria-label="Zatvori">&times;</button>
+                </div>
+            @endif
+            @if(session('status'))
+                <div class="mb-4 relative rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-700 shadow" role="alert" data-flash-alert data-alert-type="status">
+                    <span class="font-medium">Info:</span> {{ session('status') }}
+                    <button type="button" class="absolute top-1.5 right-2 text-green-600 hover:text-green-800" data-alert-close aria-label="Zatvori">&times;</button>
+                </div>
+            @endif
             @yield('content')
         </main>
 
@@ -125,6 +138,22 @@
                 } else {
                     body.classList.remove('sidebar-collapsed');
                 }
+            });
+
+            // Flash alert auto-hide & close
+            const alerts = document.querySelectorAll('[data-flash-alert]');
+            alerts.forEach(alert => {
+                const closeBtn = alert.querySelector('[data-alert-close]');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => alert.remove());
+                }
+                // Auto-hide nakon 6 sekundi osim error poruka (njih ostavi 10s)
+                const type = alert.getAttribute('data-alert-type');
+                const timeout = type === 'error' ? 10000 : 6000;
+                setTimeout(() => {
+                    alert.classList.add('opacity-0', 'transition', 'duration-500');
+                    setTimeout(() => alert.remove(), 520);
+                }, timeout);
             });
         });
     </script>
