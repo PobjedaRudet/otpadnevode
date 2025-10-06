@@ -52,8 +52,7 @@
             {{ $slot }}
         </div>
         <div class="mt-6 text-center text-xs text-[#706f6c] dark:text-[#6f6e69]">
-            © {{ date('Y') }} {{ config('app.name','Aplikacija') }} · <button id="themeToggle" type="button" class="underline underline-offset-4 hover:text-[#1b1b18] dark:hover:text-[#ededec]">Tema</button>
-        </div>
+            © {{ date('Y') }} {{ config('app.name','Aplikacija') }}
     </main>
 
 <script>

@@ -25,6 +25,25 @@
         </div>
     @endif
 
+    <!-- Stat cards row -->
+    <div class="grid gap-6 md:grid-cols-3 mb-10">
+        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Statistika</p>
+            <p class="text-3xl font-bold text-teal-600">{{ $users->where('role','admin')->count() }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Admin korisnika</p>
+        </div>
+        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Ukupno korisnika</p>
+            <p class="text-3xl font-bold text-sky-600">{{ $users->count() }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registrovani nalozi</p>
+        </div>
+        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Dozvole aktivne</p>
+            <p class="text-3xl font-bold text-amber-600">{{ collect($users)->pluck('permissions')->filter()->flatten()->unique()->count() }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Različitih tipova</p>
+        </div>
+    </div>
+
     <div class="bg-white dark:bg-gray-800/80 backdrop-blur rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50/60 dark:bg-gray-900/40">
             <h2 class="text-sm font-semibold tracking-wide text-gray-600 dark:text-gray-300 uppercase">Korisnici sistema</h2>
@@ -183,22 +202,6 @@
         </div>
     </div>
 
-    <div class="mt-10 grid gap-6 md:grid-cols-3">
-        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Statistika</p>
-            <p class="text-3xl font-bold text-teal-600">{{ $users->where('role','admin')->count() }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Admin korisnika</p>
-        </div>
-        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Ukupno korisnika</p>
-            <p class="text-3xl font-bold text-sky-600">{{ $users->count() }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registrovani nalozi</p>
-        </div>
-        <div class="p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-            <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Dozvole aktivne</p>
-            <p class="text-3xl font-bold text-amber-600">{{ collect($users)->pluck('permissions')->filter()->flatten()->unique()->count() }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Različitih tipova</p>
-        </div>
-    </div>
+
 </div>
 @endsection

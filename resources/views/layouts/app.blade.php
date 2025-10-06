@@ -35,6 +35,7 @@
                     ['label' => 'Detaljni izvještaj', 'route' => 'reports.index', 'permission' => 'reports', 'icon' => 'M9 17v-6h2v6H9zm4 0V7h2v10h-2zM5 17h2v-2H5v2zm8-12V4a1 1 0 00-1-1H6a1 1 0 00-1 1v14h14V7h-2a1 1 0 01-1-1h-3z'],
                     ['label' => 'Sumarni izvještaj', 'route' => 'reports.summary', 'permission' => 'summary', 'icon' => 'M3 3h18v4H3V3zm0 6h18v4H3V9zm0 6h18v4H3v-4z'],
                     ['label' => 'Izvještaj po instrumentu', 'route' => 'reports.instrumentSummary', 'permission' => 'instrumentSummary', 'icon' => 'M9 17v-6h2v6H9zm4 0V7h2v10h-2zM5 17h2v-2H5v2zm8-12V4a1 1 0 00-1-1H6a1 1 0 00-1 1v14h14V7h-2a1 1 0 01-1-1h-3z'],
+                    ['label' => 'Izvještaj po periodu', 'route' => 'reports.period', 'permission' => 'reports', 'icon' => 'M8 7V3m8 4V3M3 9h18M5 9v10a2 2 0 002 2h10a2 2 0 002-2V9H5z'],
                 ];
             @endphp
             @foreach($nav as $item)

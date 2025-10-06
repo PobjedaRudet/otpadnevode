@@ -52,6 +52,18 @@ Thank you for considering contributing to the Laravel framework! The contributio
 
 In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
 
+
+### Mjesečni izvještaj (automatizovano)
+
+- Komanda: `php artisan reports:send-monthly`
+- Raspored: 1. u mjesecu u 07:00 (preko task schedulera odnosno cron-a) definisan u `app/Console/Kernel.php`.
+- Prima opcioni `--date=` parametar za testiranje (npr. `--date=2025-10-06`).
+- Email primaoci se podešavaju kroz .env varijablu:
+
+```
+REPORT_RECIPIENTS="user1@example.com,user2@example.com"
+```
+
 ## Security Vulnerabilities
 
 If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
