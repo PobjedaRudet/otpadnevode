@@ -82,7 +82,7 @@
                                                     <div class="h-full {{ $isMax ? 'bg-teal-600' : 'bg-teal-400/70 dark:bg-teal-500/80 group-hover:bg-teal-500' }} transition-all duration-500" style="width: {{ number_format($pct, 2, '.', '') }}%"></div>
                                                 </div>
                                                 <div class="absolute inset-0 flex items-center justify-end pr-1">
-                                                    <span class="text-[11px] font-bold tracking-wide {{ $val < 0 ? 'text-rose-600 dark:text-rose-400' : ($val == 0 ? 'text-gray-500 dark:text-gray-400' : 'text-emerald-600 dark:text-emerald-400') }}">{{ number_format($val, 2) }}</span>
+                                                    <span class="text-[11px] font-bold tracking-wide {{ $val < 0 ? 'text-rose-600 dark:text-rose-400' : ($val == 0 ? 'text-gray-500 dark:text-gray-400' : 'text-emerald-600 dark:text-emerald-400') }}">{{ number_format($val, 2) }} m³</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -92,7 +92,7 @@
                             <tfoot class="bg-gray-50 dark:bg-gray-700/60 text-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-semibold text-gray-900 dark:text-gray-100">Ukupno</th>
-                                    <th class="pr-4 pl-2 py-3 text-right font-bold text-emerald-700 dark:text-emerald-400">{{ number_format($totals['overall'], 2) }}</th>
+                                    <th class="pr-4 pl-2 py-3 text-right font-bold text-emerald-700 dark:text-emerald-400">{{ number_format($totals['overall'], 2) }} m³</th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -204,12 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         callbacks: {
                             label: function(tt){
                                 if (tt.dataset.label === 'Mjesečno') {
-                                    return ' Mjesečno: ' + (tt.parsed.y ?? 0).toFixed(2);
+                                    return ' Mjesečno: ' + (tt.parsed.y ?? 0).toFixed(2) + ' m³';
                                 }
                                 if (tt.dataset.type === 'line') {
-                                    return ' Kumulativno: ' + (tt.parsed.y ?? 0).toFixed(2);
+                                    return ' Kumulativno: ' + (tt.parsed.y ?? 0).toFixed(2) + ' m³';
                                 }
-                                return ' ' + (tt.parsed.y ?? 0).toFixed(2);
+                                return ' ' + (tt.parsed.y ?? 0).toFixed(2) + ' m³';
                             }
                         }
                     }
@@ -217,7 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: 'Vrijednost' }
+                        title: { display: true, text: 'Vrijednost (m³)' },
+                        ticks: { callback: v => v + ' m³' }
                     },
                     x: {
                         title: { display: true, text: 'Mjeseci' }

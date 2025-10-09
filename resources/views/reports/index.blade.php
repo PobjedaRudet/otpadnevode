@@ -117,16 +117,16 @@
                             </div>
                             <div class="text-center">
                                 <div class="text-sky-800 text-sm font-medium mb-1">Početna vrijednost</div>
-                                <div class="text-2xl font-bold text-sky-900">{{ number_format($firstValue, 2) }}</div>
+                                <div class="text-2xl font-bold text-sky-900">{{ number_format($firstValue, 2) }} m³</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-emerald-800 text-sm font-medium mb-1">Krajnja vrijednost</div>
-                                <div class="text-2xl font-bold text-emerald-900">{{ number_format($lastValue, 2) }}</div>
+                                <div class="text-2xl font-bold text-emerald-900">{{ number_format($lastValue, 2) }} m³</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-amber-800 text-sm font-medium mb-1">Razlika</div>
                                 <div class="text-2xl font-bold text-blue-600">
-                                    {{ $valueDifference >= 0 ? '+' : '' }}{{ number_format($valueDifference, 2) }}
+                                    {{ $valueDifference >= 0 ? '+' : '' }}{{ number_format($valueDifference, 2) }} m³
                                 </div>
                             </div>
                         </div>
@@ -164,7 +164,7 @@
                                                 {{ $record->vrijeme->format('H:i:s') }}
                                             </td>
                                             <td class="px-6 py-4 text-sm font-medium text-gray-900 border-b border-gray-100">
-                                                {{ number_format($record->vrijednost, 2) }}
+                                                {{ number_format($record->vrijednost, 2) }} m³
                                             </td>
                                         </tr>
                                         @endforeach
@@ -297,7 +297,8 @@
                 ds.data.forEach((pt, i) => {
                     const val = data[i];
                     if (val == null) return;
-                    ctx.fillText(typeof val === 'number' ? val.toFixed(2) : val, pt.x, pt.y - 6);
+                    const txt = (typeof val === 'number' ? val.toFixed(2) : val) + ' m³';
+                    ctx.fillText(txt, pt.x, pt.y - 6);
                 });
                 ctx.restore();
             }
@@ -343,7 +344,7 @@
                                 if (Array.isArray(lbl)) return lbl.join(' ');
                                 return lbl;
                             },
-                            label: (ctx) => 'Vrijednost: ' + ctx.parsed.y
+                            label: (ctx) => 'Vrijednost: ' + ctx.parsed.y + ' m³'
                         }
                     },
                     pointValuePlugin: { show: !tooManyPoints }
@@ -351,8 +352,8 @@
                 scales: {
                     y: {
                         beginAtZero: false,
-                        title: { display: true, text: 'Vrijednost' },
-                        ticks: { callback: v => v }
+                        title: { display: true, text: 'Vrijednost (m³)' },
+                        ticks: { callback: v => v + ' m³' }
                     },
                     x: {
                         display: true,

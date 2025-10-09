@@ -101,17 +101,17 @@
                 </div>
                 <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm flex flex-col gap-1">
                     <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Min (stranica)</span>
-                    <span class="text-lg font-semibold text-sky-600 dark:text-sky-400">{{ $minV !== null ? number_format($minV,2) : '—' }}</span>
+                    <span class="text-lg font-semibold text-sky-600 dark:text-sky-400">{{ $minV !== null ? number_format($minV,2) . ' m³' : '—' }}</span>
                     <span class="text-[11px] text-gray-400">Najmanja vrijednost</span>
                 </div>
                 <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm flex flex-col gap-1">
                     <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Max (stranica)</span>
-                    <span class="text-lg font-semibold text-fuchsia-600 dark:text-fuchsia-400">{{ $maxV !== null ? number_format($maxV,2) : '—' }}</span>
+                    <span class="text-lg font-semibold text-fuchsia-600 dark:text-fuchsia-400">{{ $maxV !== null ? number_format($maxV,2) . ' m³' : '—' }}</span>
                     <span class="text-[11px] text-gray-400">Najveća vrijednost</span>
                 </div>
                 <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm flex flex-col gap-1">
                     <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Prosjek (stranica)</span>
-                    <span class="text-lg font-semibold text-amber-600 dark:text-amber-400">{{ $avgV !== null ? number_format($avgV,2) : '—' }}</span>
+                    <span class="text-lg font-semibold text-amber-600 dark:text-amber-400">{{ $avgV !== null ? number_format($avgV,2) . ' m³' : '—' }}</span>
                     <span class="text-[11px] text-gray-400">Aritmetička sredina</span>
                 </div>
             </div>
@@ -148,7 +148,7 @@
                                     <td class="px-4 py-2 whitespace-nowrap text-gray-800 dark:text-gray-100">{{ $rec->datum->format('d.m.Y') }}</td>
                                     <td class="px-4 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{{ \Carbon\Carbon::parse($rec->vrijeme)->format('H:i:s') }}</td>
                                     <td class="px-4 py-2 text-gray-700 dark:text-gray-300">{{ $rec->instrument?->name ?? '—' }}</td>
-                                    <td class="px-4 py-2 font-medium {{ $neg ? 'text-rose-600 dark:text-rose-400' : 'text-teal-700 dark:text-teal-300' }}">{{ number_format($rec->vrijednost, 2) }}</td>
+                                    <td class="px-4 py-2 font-medium {{ $neg ? 'text-rose-600 dark:text-rose-400' : 'text-teal-700 dark:text-teal-300' }}">{{ number_format($rec->vrijednost, 2) }} m³</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -169,7 +169,7 @@
                             <span class="text-xs font-semibold text-teal-600 dark:text-teal-400">{{ \Carbon\Carbon::parse($rec->vrijeme)->format('H:i') }}</span>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Mjerno mjesto: <span class="font-medium text-gray-700 dark:text-gray-300">{{ $rec->instrument?->name ?? '—' }}</span></p>
-                        <p class="text-sm font-semibold {{ $neg ? 'text-rose-600 dark:text-rose-400' : 'text-teal-700 dark:text-teal-300' }}">Vrijednost: {{ number_format($rec->vrijednost, 2) }}</p>
+                        <p class="text-sm font-semibold {{ $neg ? 'text-rose-600 dark:text-rose-400' : 'text-teal-700 dark:text-teal-300' }}">Vrijednost: {{ number_format($rec->vrijednost, 2) }} m³</p>
                     </div>
                 @endforeach
                 <div class="pt-2 text-center">{{ $paginator->links() }}</div>

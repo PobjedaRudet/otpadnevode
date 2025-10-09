@@ -84,7 +84,7 @@
                                                             : ($val == 0
                                                                 ? 'text-gray-500 dark:text-gray-400'
                                                                 : 'text-blue-700 dark:text-blue-400') }}">
-                                                        {{ number_format($val, 2) }}
+                                                        {{ number_format($val, 2) }} m³
                                                     </span>
                                                 </div>
                                             </div>
@@ -95,7 +95,7 @@
                             <tfoot class="bg-gray-50 dark:bg-gray-700/60 text-sm">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-semibold text-gray-900 dark:text-gray-100">Ukupno</th>
-                                    <th class="pr-4 pl-2 py-3 text-right font-bold text-blue-700 dark:text-blue-400">{{ number_format($totals['overall'], 2) }}</th>
+                                    <th class="pr-4 pl-2 py-3 text-right font-bold text-blue-700 dark:text-blue-400">{{ number_format($totals['overall'], 2) }} m³</th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -116,11 +116,11 @@
                             <div>
                                 <div class="flex justify-between text-[11px] font-medium mb-1 text-gray-700 dark:text-gray-300">
                                     <span>{{ $row['label'] }}</span>
-                                    <span>{{ number_format($row['total'], 2) }}</span>
+                                    <span>{{ number_format($row['total'], 2) }} m³</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded h-4 relative overflow-hidden">
                                     <div class="h-4 bg-teal-500 dark:bg-teal-400 rounded transition-all duration-500" style="width: {{ number_format($pct, 2) }}%;"></div>
-                                    <span class="absolute inset-0 text-[10px] flex items-center justify-center text-white font-semibold mix-blend-luminosity">{{ $pct > 8 ? number_format($row['total'], 0) : '' }}</span>
+                                    <span class="absolute inset-0 text-[10px] flex items-center justify-center text-white font-semibold mix-blend-luminosity">{{ $pct > 8 ? number_format($row['total'], 0) . ' m³' : '' }}</span>
                                 </div>
                             </div>
                         @endforeach
@@ -243,12 +243,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         callbacks: {
                             label: function(tt){
                                 if (tt.dataset.label === 'Mjesečno') {
-                                    return ' Mjesečno: ' + (tt.parsed.y ?? 0).toFixed(2);
+                                    return ' Mjesečno: ' + (tt.parsed.y ?? 0).toFixed(2) + ' m³';
                                 }
                                 if (tt.dataset.type === 'line') {
-                                    return ' Kumulativno: ' + (tt.parsed.y ?? 0).toFixed(2);
+                                    return ' Kumulativno: ' + (tt.parsed.y ?? 0).toFixed(2) + ' m³';
                                 }
-                                return ' ' + (tt.parsed.y ?? 0).toFixed(2);
+                                return ' ' + (tt.parsed.y ?? 0).toFixed(2) + ' m³';
                             }
                         }
                     },
@@ -257,9 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: 'Vrijednost' },
+                        title: { display: true, text: 'Vrijednost (m³)' },
                         ticks: {
-                            callback: v => v
+                            callback: v => v + ' m³'
                         }
                     },
                     x: {
@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (Number(val) === 0) return; // preskoči nule radi preglednosti
                     const {x, y} = el.tooltipPosition();
                     ctx.fillStyle = '#1f2937'; // gray-800
-                    ctx.fillText(Number(val).toFixed(2), x, y - 4);
+                    ctx.fillText(Number(val).toFixed(2) + ' m³', x, y - 4);
                 });
                 ctx.restore();
             }

@@ -105,7 +105,8 @@ class ReportController extends Controller
                     return [
                         'datum' => $record->datum->format('d.m.Y'),
                         'vrijeme' => $record->vrijeme->format('H:i:s'),
-                        'vrijednost' => number_format($record->vrijednost, 2)
+                        // Include measurement unit with superscript (m³)
+                        'vrijednost' => number_format($record->vrijednost, 2) . ' m³'
                     ];
                 });
 
