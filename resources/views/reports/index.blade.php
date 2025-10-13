@@ -297,7 +297,7 @@
                 ds.data.forEach((pt, i) => {
                     const val = data[i];
                     if (val == null) return;
-                    const txt = (typeof val === 'number' ? val.toFixed(2) : val) + ' m³';
+                    const txt = (typeof val === 'number' ? val.toFixed(2) : val);
                     ctx.fillText(txt, pt.x, pt.y - 6);
                 });
                 ctx.restore();
@@ -344,7 +344,7 @@
                                 if (Array.isArray(lbl)) return lbl.join(' ');
                                 return lbl;
                             },
-                            label: (ctx) => 'Vrijednost: ' + ctx.parsed.y + ' m³'
+                            label: (ctx) => 'Vrijednost: ' + ctx.parsed.y
                         }
                     },
                     pointValuePlugin: { show: !tooManyPoints }
@@ -352,8 +352,8 @@
                 scales: {
                     y: {
                         beginAtZero: false,
-                        title: { display: true, text: 'Vrijednost (m³)' },
-                        ticks: { callback: v => v + ' m³' }
+                        title: { display: true, text: 'Vrijednost' },
+                        ticks: { callback: v => v }
                     },
                     x: {
                         display: true,

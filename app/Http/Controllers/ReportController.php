@@ -492,4 +492,337 @@ class ReportController extends Controller
             'driver' => $driver
         ]);
     }
+
+    /**
+     * Export monthly summary DOCX for selected company grouped by instruments using a Word template.
+     * Request params: company_id (required), year (required), month (required: 1..12)
+     */
+    public function exportSummaryDocx(Request $request)
+    {
+        $companyId = (int)$request->query('company_id');
+        $year = (int)$request->query('year');
+        $month = (int)$request->query('month');
+
+        if (!$companyId || !$year || $month < 1 || $month > 12) {
+            return redirect()->back()->with('error', 'Nedostaju parametri: firma, godina i mjesec su obavezni.');
+        }
+
+        $company = Company::find($companyId);
+        if (!$company) {
+            return redirect()->back()->with('error', 'Firma nije pronađena.');
+        }
+
+        // Determine DB-specific expressions for filtering by year/month
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $yearWhere = "strftime('%Y', datum) = ?";
+            $monthWhere = "CAST(strftime('%m', datum) AS INTEGER) = ?";
+            $bindings = [$year, $month];
+        } else {
+            $yearWhere = 'YEAR(datum) = ?';
+            $monthWhere = 'MONTH(datum) = ?';
+            $bindings = [$year, $month];
+        }
+
+        // Collect data per instrument: (last - first) in the month, with optional extra details
+        $instrumentIds = $company->instruments()->orderBy('name')->pluck('id', 'name');
+        $rows = [];
+        foreach ($company->instruments()->orderBy('name')->get(['id','name']) as $inst) {
+            $records = Record::where('instrument_id', $inst->id)
+                ->whereRaw($yearWhere, [$year])
+                ->whereRaw($monthWhere, [$month])
+                ->orderBy('datum')
+                ->orderBy('vrijeme')
+                ->get(['datum','vrijeme','vrijednost']);
+
+            if ($records->isEmpty()) {
+                $rows[] = [
+                    'instrument' => $inst->name,
+                    'first_date' => '-',
+                    'first_value' => '-',
+                    'last_date' => '-',
+                    'last_value' => '-',
+                    'diff' => 0.0,
+                ];
+                continue;
+            }
+
+            $first = $records->first();
+            $last = $records->last();
+            $diff = (float)$last->vrijednost - (float)$first->vrijednost;
+            $rows[] = [
+                'instrument' => $inst->name,
+                'first_date' => $first->datum->format('d.m.Y') . ' ' . (is_string($first->vrijeme) ? \Carbon\Carbon::parse($first->vrijeme)->format('H:i:s') : $first->vrijeme->format('H:i:s')),
+                'first_value' => number_format((float)$first->vrijednost, 2),
+                'last_date' => $last->datum->format('d.m.Y') . ' ' . (is_string($last->vrijeme) ? \Carbon\Carbon::parse($last->vrijeme)->format('H:i:s') : $last->vrijeme->format('H:i:s')),
+                'last_value' => number_format((float)$last->vrijednost, 2),
+                'diff' => (float)round($diff, 2),
+            ];
+        }
+
+        // Totals
+        $total = collect($rows)->sum(fn($r) => (float)$r['diff']);
+
+        // Prepare PHPWord document based on template if available
+        // Try a few common variants (case/diacritics) to be resilient on different OSes
+        $templatePath = null;
+        foreach (['Izvjestaj.docx','izvjestaj.docx','Izvješaj.docx','izvješaj.docx'] as $tpl) {
+            $p = public_path($tpl);
+            if (file_exists($p)) { $templatePath = $p; break; }
+        }
+    $monthNames = [1=>'Januar',2=>'Februar',3=>'Mart',4=>'April',5=>'Maj',6=>'Juni',7=>'Juli',8=>'Avgust',9=>'Septembar',10=>'Oktobar',11=>'Novembar',12=>'Decembar'];
+    $periodLabel = ($monthNames[$month] ?? $month) . ' ' . $year;
+    // Compute first and last calendar day for selected month
+    $firstDay = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfDay();
+    $lastDay = (clone $firstDay)->endOfMonth()->startOfDay();
+    $datumOd = $firstDay->format('d.m.Y');
+    $datumDo = $lastDay->format('d.m.Y');
+        $fileName = 'Izvjestaj_' . str_replace(' ', '_', $company->name) . '_' . $year . '_' . sprintf('%02d', $month) . '.docx';
+
+        try {
+            if (file_exists($templatePath)) {
+                // If the template defines placeholders, replace them; also add a table for instruments
+                $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($templatePath);
+                $templateProcessor->setValue('company', htmlspecialchars($company->name));
+                $templateProcessor->setValue('period', htmlspecialchars($periodLabel));
+                $templateProcessor->setValue('total', number_format($total, 2) . ' m³');
+                $templateProcessor->setValue('datum_od', $datumOd);
+                $templateProcessor->setValue('datum_do', $datumDo);
+
+                // If template contains a block/table placeholder for rows, clone
+                // We'll support two strategies:
+                // 1) If template has a row with placeholders like ${instrument}, ${first_date}, etc. within a table row marked as a block named 'rows'
+                // 2) Otherwise, append a new table to the end
+                $canClone = false;
+                try {
+                    $templateProcessor->cloneRow('instrument', max(1, count($rows)));
+                    $canClone = true;
+                } catch (\Throwable $e) {
+                    $canClone = false;
+                }
+                if ($canClone) {
+                    $i = 1;
+                    foreach ($rows as $r) {
+                        $templateProcessor->setValue("instrument#{$i}", htmlspecialchars($r['instrument']));
+                        $templateProcessor->setValue("first_date#{$i}", $r['first_date']);
+                        $templateProcessor->setValue("first_value#{$i}", $r['first_value'] . ' m³');
+                        $templateProcessor->setValue("last_date#{$i}", $r['last_date']);
+                        $templateProcessor->setValue("last_value#{$i}", $r['last_value'] . ' m³');
+                        $templateProcessor->setValue("diff#{$i}", number_format($r['diff'], 2) . ' m³');
+                        $i++;
+                    }
+                }
+
+                $tmpPath = storage_path('app/tmp_' . uniqid('rep_', true) . '.docx');
+                $templateProcessor->saveAs($tmpPath);
+                return response()->download($tmpPath, $fileName)->deleteFileAfterSend(true);
+            } else {
+                // Build a simple DOCX from scratch if template missing
+                $phpWord = new \PhpOffice\PhpWord\PhpWord();
+                $section = $phpWord->addSection();
+                $section->addTitle('Mjesečni izvještaj', 1);
+                $section->addText($company->name);
+                $section->addText('Period: ' . $periodLabel);
+                $section->addText('Ukupno: ' . number_format($total, 2) . ' m³');
+                $section->addTextBreak(1);
+                $table = $section->addTable(['borderSize' => 6, 'borderColor' => '999999', 'cellMargin' => 80]);
+                $table->addRow();
+                foreach (['Instrument','Prvi datum','Prva vrijednost','Zadnji datum','Zadnja vrijednost','Razlika'] as $hdr) {
+                    $table->addCell(2200)->addText($hdr, ['bold' => true]);
+                }
+                foreach ($rows as $r) {
+                    $table->addRow();
+                    $table->addCell(2200)->addText($r['instrument']);
+                    $table->addCell(2200)->addText($r['first_date']);
+                    $table->addCell(2200)->addText($r['first_value'] . ' m³');
+                    $table->addCell(2200)->addText($r['last_date']);
+                    $table->addCell(2200)->addText($r['last_value'] . ' m³');
+                    $table->addCell(2200)->addText(number_format($r['diff'], 2) . ' m³');
+                }
+
+                $tmpPath = storage_path('app/tmp_' . uniqid('rep_', true) . '.docx');
+                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+                $writer->save($tmpPath);
+                return response()->download($tmpPath, $fileName)->deleteFileAfterSend(true);
+            }
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Greška pri generisanju DOCX: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export a DOCX with instrument deltas for all companies for the given year/month.
+     * Params: year (required), month (required)
+     */
+    public function exportAllSummaryDocx(Request $request)
+    {
+        $year = (int)$request->query('year');
+        $month = (int)$request->query('month');
+        if (!$year || $month < 1 || $month > 12) {
+            return redirect()->back()->with('error', 'Godina i mjesec su obavezni.');
+        }
+
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            $yearWhere = "strftime('%Y', datum) = ?";
+            $monthWhere = "CAST(strftime('%m', datum) AS INTEGER) = ?";
+        } else {
+            $yearWhere = 'YEAR(datum) = ?';
+            $monthWhere = 'MONTH(datum) = ?';
+        }
+
+        $companies = Company::with(['instruments:id,company_id,name'])->orderBy('name')->get(['id','name']);
+        $rows = [];
+        foreach ($companies as $company) {
+            foreach ($company->instruments as $inst) {
+                $records = Record::where('instrument_id', $inst->id)
+                    ->whereRaw($yearWhere, [$year])
+                    ->whereRaw($monthWhere, [$month])
+                    ->orderBy('datum')->orderBy('vrijeme')
+                    ->get(['datum','vrijeme','vrijednost']);
+
+                if ($records->isEmpty()) {
+                    $rows[] = [
+                        'company' => $company->name,
+                        'instrument' => $inst->name,
+                        'first_date' => '-', 'first_value' => '-',
+                        'last_date' => '-', 'last_value' => '-',
+                        'diff' => 0.0,
+                    ];
+                } else {
+                    $first = $records->first();
+                    $last = $records->last();
+                    $diff = (float)$last->vrijednost - (float)$first->vrijednost;
+                    $rows[] = [
+                        'company' => $company->name,
+                        'instrument' => $inst->name,
+                        'first_date' => $first->datum->format('d.m.Y') . ' ' . (is_string($first->vrijeme) ? \Carbon\Carbon::parse($first->vrijeme)->format('H:i:s') : $first->vrijeme->format('H:i:s')),
+                        'first_value' => number_format((float)$first->vrijednost, 2),
+                        'last_date' => $last->datum->format('d.m.Y') . ' ' . (is_string($last->vrijeme) ? \Carbon\Carbon::parse($last->vrijeme)->format('H:i:s') : $last->vrijeme->format('H:i:s')),
+                        'last_value' => number_format((float)$last->vrijednost, 2),
+                        'diff' => (float)round($diff, 2),
+                    ];
+                }
+            }
+        }
+
+        $total = collect($rows)->sum(fn($r) => (float)$r['diff']);
+        $monthNames = [1=>'Januar',2=>'Februar',3=>'Mart',4=>'April',5=>'Maj',6=>'Juni',7=>'Juli',8=>'Avgust',9=>'Septembar',10=>'Oktobar',11=>'Novembar',12=>'Decembar'];
+        $periodLabel = ($monthNames[$month] ?? $month) . ' ' . $year;
+        $firstDay = \Carbon\Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $lastDay = (clone $firstDay)->endOfMonth()->startOfDay();
+        $datumOd = $firstDay->format('d.m.Y');
+        $datumDo = $lastDay->format('d.m.Y');
+
+        // Template path (reuse same detection)
+        $templatePath = null;
+        foreach (['Izvjestaj.docx','izvjestaj.docx','Izvješaj.docx','izvješaj.docx'] as $tpl) {
+            $p = public_path($tpl);
+            if (file_exists($p)) { $templatePath = $p; break; }
+        }
+        $fileName = 'Izvjestaj_SVE_FIRME_' . $year . '_' . sprintf('%02d', $month) . '.docx';
+
+        try {
+            if ($templatePath) {
+                $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($templatePath);
+                $templateProcessor->setValue('company', 'Sve firme');
+                $templateProcessor->setValue('period', $periodLabel);
+                $templateProcessor->setValue('total', number_format($total, 2) . ' m³');
+                $templateProcessor->setValue('datum_od', $datumOd);
+                $templateProcessor->setValue('datum_do', $datumDo);
+
+                // Try to clone by 'instrument' as before; if template also contains ${company} in row, we will set company#i too
+                $count = max(1, count($rows));
+                $canClone = false;
+                try { $templateProcessor->cloneRow('instrument', $count); $canClone = true; } catch (\Throwable $e) { $canClone = false; }
+                if ($canClone) {
+                    $i = 1;
+                    foreach ($rows as $r) {
+                        $templateProcessor->setValue("instrument#{$i}", htmlspecialchars($r['instrument']));
+                        // per-row company placeholder if present in template row
+                        try { $templateProcessor->setValue("company#{$i}", htmlspecialchars($r['company'])); } catch (\Throwable $e) {}
+                        $templateProcessor->setValue("first_date#{$i}", $r['first_date']);
+                        $templateProcessor->setValue("first_value#{$i}", $r['first_value'] . ' m³');
+                        $templateProcessor->setValue("last_date#{$i}", $r['last_date']);
+                        $templateProcessor->setValue("last_value#{$i}", $r['last_value'] . ' m³');
+                        $templateProcessor->setValue("diff#{$i}", number_format($r['diff'], 2) . ' m³');
+                        $i++;
+                    }
+                }
+
+                // Additionally, support fixed template cells using reports_template config
+                $map = config('reports_template.rows', []);
+                if (is_array($map) && !empty($map)) {
+                    foreach ($map as $key => $criteria) {
+                        $companyContains = $criteria['company_contains'] ?? null;
+                        $instrumentContains = $criteria['instrument_contains'] ?? null;
+                        $alias = $criteria['alias'] ?? null;
+                        $matched = collect($rows)->first(function($r) use ($companyContains, $instrumentContains) {
+                            $ok = true;
+                            if ($companyContains) {
+                                $ok = $ok && (stripos($r['company'], $companyContains) !== false);
+                            }
+                            if ($instrumentContains) {
+                                $ok = $ok && (stripos($r['instrument'], $instrumentContains) !== false);
+                            }
+                            return $ok;
+                        });
+                        if ($matched) {
+                            // Fill ${<key>_first_value}, ${<key>_last_value}, ${<key>_diff}
+                            try { $templateProcessor->setValue($key . '_first_value', $matched['first_value'] . ' m³'); } catch (\Throwable $e) {}
+                            try { $templateProcessor->setValue($key . '_last_value', $matched['last_value'] . ' m³'); } catch (\Throwable $e) {}
+                            try { $templateProcessor->setValue($key . '_diff', number_format($matched['diff'], 2) . ' m³'); } catch (\Throwable $e) {}
+                            // Fill short alias ${<alias>_f}, ${<alias>_l}, ${<alias>_d}
+                            if ($alias) {
+                                try { $templateProcessor->setValue($alias . '_f', $matched['first_value'] . ' m³'); } catch (\Throwable $e) {}
+                                try { $templateProcessor->setValue($alias . '_l', $matched['last_value'] . ' m³'); } catch (\Throwable $e) {}
+                                try { $templateProcessor->setValue($alias . '_d', number_format($matched['diff'], 2) . ' m³'); } catch (\Throwable $e) {}
+                            }
+                        } else {
+                            // Fill blanks if not matched
+                            try { $templateProcessor->setValue($key . '_first_value', '-'); } catch (\Throwable $e) {}
+                            try { $templateProcessor->setValue($key . '_last_value', '-'); } catch (\Throwable $e) {}
+                            try { $templateProcessor->setValue($key . '_diff', '0.00 m³'); } catch (\Throwable $e) {}
+                            if ($alias) {
+                                try { $templateProcessor->setValue($alias . '_f', '-'); } catch (\Throwable $e) {}
+                                try { $templateProcessor->setValue($alias . '_l', '-'); } catch (\Throwable $e) {}
+                                try { $templateProcessor->setValue($alias . '_d', '0.00 m³'); } catch (\Throwable $e) {}
+                            }
+                        }
+                    }
+                }
+
+                $tmpPath = storage_path('app/tmp_' . uniqid('rep_all_', true) . '.docx');
+                $templateProcessor->saveAs($tmpPath);
+                return response()->download($tmpPath, $fileName)->deleteFileAfterSend(true);
+            } else {
+                $phpWord = new \PhpOffice\PhpWord\PhpWord();
+                $section = $phpWord->addSection();
+                $section->addTitle('Mjesečni izvještaj (sve firme)', 1);
+                $section->addText('Period: ' . $periodLabel);
+                $section->addText('Od: ' . $datumOd . '  Do: ' . $datumDo);
+                $section->addText('Ukupno: ' . number_format($total, 2) . ' m³');
+                $section->addTextBreak(1);
+                $table = $section->addTable(['borderSize' => 6, 'borderColor' => '999999', 'cellMargin' => 80]);
+                $table->addRow();
+                foreach (['Firma','Instrument','Prvi datum','Prva vrijednost','Zadnji datum','Zadnja vrijednost','Razlika'] as $hdr) { $table->addCell(2000)->addText($hdr, ['bold'=>true]); }
+                foreach ($rows as $r) {
+                    $table->addRow();
+                    $table->addCell(2000)->addText($r['company']);
+                    $table->addCell(2000)->addText($r['instrument']);
+                    $table->addCell(2000)->addText($r['first_date']);
+                    $table->addCell(2000)->addText($r['first_value'] . ' m³');
+                    $table->addCell(2000)->addText($r['last_date']);
+                    $table->addCell(2000)->addText($r['last_value'] . ' m³');
+                    $table->addCell(2000)->addText(number_format($r['diff'], 2) . ' m³');
+                }
+                $tmpPath = storage_path('app/tmp_' . uniqid('rep_all_', true) . '.docx');
+                $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+                $writer->save($tmpPath);
+                return response()->download($tmpPath, $fileName)->deleteFileAfterSend(true);
+            }
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Greška pri generisanju DOCX (sve firme): ' . $e->getMessage());
+        }
+    }
 }

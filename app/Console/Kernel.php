@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         \App\Console\Commands\SendMonthlyCompanyDeltaReport::class,
+        \App\Console\Commands\MakeWordTemplate::class,
     ];
 
     /**
